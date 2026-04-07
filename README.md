@@ -1,69 +1,131 @@
-# CodeIgniter 4 Application Starter
+# Gule (Gerbang Undang-undang Legal Elektronik)
 
-## What is CodeIgniter?
+Gule adalah asisten hukum berbasis AI yang membantu pengelolaan dan pencarian peraturan perundang-undangan secara cerdas. Aplikasi ini menggunakan sistem **RAG (Retrieval-Augmented Generation)** untuk menjawab pertanyaan pengguna hanya berdasarkan basis data dokumen hukum yang telah diunggah.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+## Fitur Utama
+- **Dashboard Modern**: Visualisasi ringkasan data hukum.
+- **Upload PDF**: Ekstraksi teks otomatis dari file PDF hukum.
+- **AI Chatbot**: Bertanya langsung pada AI yang bersumber dari dokumen hukum di bank data.
+- **Bank Data**: Manajemen dokumen hukum (Tambah, Lihat, Hapus).
+- **Keamanan**: Proteksi CSRF global dan validasi backend untuk file upload.
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+---
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## Prasyarat (Prerequisites)
+- **PHP**: 8.2 atau lebih tinggi.
+- **MySQL/MariaDB**: 5.7+ (Wajib mendukung Full-Text Search).
+- **Composer**: Versi 2.x.
+- **Google Gemini API Key**: [Dapatkan di sini](https://aistudio.google.com/app/apikey).
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+---
 
-## Installation & updates
+## Panduan Instalasi (Development)
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+1. **Clone & Install Dependensi**:
+   ```bash
+   composer install
+   ```
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+2. **Konfigurasi Environment**:
+   Salin file `env` menjadi `.env` dan sesuaikan konfigurasinya:
+   ```bash
+   cp env .env
+   ```
+   Edit `.env`:
+   - `CI_ENVIRONMENT = development`
+   - `database.default.hostname = localhost`
+   - `database.default.database = gule`
+   - `database.default.username = root`
+   - `database.default.password = `
+   - `GEMINI_API_KEY = YOUR_GOOGLE_GEMINI_API_KEY`
 
-## Setup
+3. **Setup Database**:
+   Buat database bernama `gule` di MySQL, lalu jalankan migrasi:
+   ```bash
+   php spark migrate
+   ```
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+4. **Jalankan Server Lokal**:
+   ```bash
+   php spark serve
+   ```
+   Akses aplikasi di: `http://localhost:8080`
 
-## Important Change with index.php
+---
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+## Panduan Instalasi (Production)
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+1. **Upload File**: Unggah semua file ke server production (direkomendasikan menggunakan Git).
+2. **Setup .env**:
+   Pastikan `CI_ENVIRONMENT = production`.
+   Gunakan password database yang kuat.
+3. **Optimasi Composer**:
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   ```
+4. **Izin Direktori (Permissions)**:
+   Pastikan direktori `writable/` dapat ditulisi oleh server (misal: `www-data`):
+   ```bash
+   chmod -R 775 writable
+   chown -R www-data:www-data writable
+   ```
+5. **Konfigurasi Web Server**:
+   Arahkan **Document Root** ke folder `public/`, bukan ke folder root proyek.
+6. **Keamanan**: Generate encryption key untuk aplikasi:
+   ```bash
+   php spark key:generate
+   ```
 
-**Please** read the user guide for a better explanation of how CI4 works!
+---
 
-## Repository Management
+## Skema Database SQL (Manual)
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+Jika Anda ingin membuat tabel secara manual tanpa fitur migrasi CI4, gunakan script SQL berikut:
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+```sql
+CREATE DATABASE IF NOT EXISTS gule;
+USE gule;
 
-## Server Requirements
+-- Tabel Dokumen
+CREATE TABLE documents (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
+    year INT(4),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+-- Tabel Potongan Teks (Chunks) untuk RAG
+CREATE TABLE document_chunks (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    document_id INT(11) UNSIGNED,
+    chunk_content TEXT,
+    metadata VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FULLTEXT(chunk_content)
+) ENGINE=InnoDB;
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+-- Tabel Riwayat Chat
+CREATE TABLE chat_history (
+    id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(100) NOT NULL,
+    sender ENUM('user', 'bot') DEFAULT 'user',
+    message TEXT,
+    `references` TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+---
 
-Additionally, make sure that the following extensions are enabled in your PHP:
-
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+## Tech Stack
+- **Framework**: CodeIgniter 4.7
+- **Database**: MySQL (Full-Text Engine)
+- **AI Engine**: Google Gemini Pro (RAG System)
+- **Frontend**: Tailwind CSS v3
+- **Libraries**:
+  - `smalot/pdfparser`: PDF extraction
+  - `google-gemini-php/client`: AI integration
