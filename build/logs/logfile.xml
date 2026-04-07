@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/app/phpunit.xml.dist" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.045899">
+    <testsuite name="App" tests="5" assertions="7" errors="0" failures="0" skipped="0" time="0.045899">
+      <testsuite name="ExampleDatabaseTest" file="/app/tests/database/ExampleDatabaseTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.037774">
+        <testcase name="testModelFindAll" file="/app/tests/database/ExampleDatabaseTest.php" line="17" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="1" time="0.032583"/>
+        <testcase name="testSoftDeleteLeavesRow" file="/app/tests/database/ExampleDatabaseTest.php" line="28" class="ExampleDatabaseTest" classname="ExampleDatabaseTest" assertions="2" time="0.005191"/>
+      </testsuite>
+      <testsuite name="ExampleSessionTest" file="/app/tests/session/ExampleSessionTest.php" tests="1" assertions="1" errors="0" failures="0" skipped="0" time="0.001027">
+        <testcase name="testSessionSimple" file="/app/tests/session/ExampleSessionTest.php" line="10" class="ExampleSessionTest" classname="ExampleSessionTest" assertions="1" time="0.001027"/>
+      </testsuite>
+      <testsuite name="HealthTest" file="/app/tests/unit/HealthTest.php" tests="2" assertions="3" errors="0" failures="0" skipped="0" time="0.007098">
+        <testcase name="testIsDefinedAppPath" file="/app/tests/unit/HealthTest.php" line="12" class="HealthTest" classname="HealthTest" assertions="1" time="0.000674"/>
+        <testcase name="testBaseUrlHasBeenSet" file="/app/tests/unit/HealthTest.php" line="17" class="HealthTest" classname="HealthTest" assertions="2" time="0.006424"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>
